@@ -91,6 +91,7 @@ int main()
 #include<io.h>
 #include <direct.h>
 #include<string.h>
+#include<stdlib.h>
 
 using namespace std;
 
@@ -112,14 +113,14 @@ bool inout::in(const char *str1, const char* str2)
 	in.open(str1, ios::binary);   //ios::binary是抑制底层系统服务对文件内容进行的自动转换;如果不加这个，系统会自动把'\n'转为'\r\n';
 	if (!in)
 	{
-		cout << "Cannot open file.";
+		cout << "Cannot in file." << endl;
 		return 1;
 	}
 	ofstream out;
 	out.open(str2, ios::binary);
 	if (!out) {
 
-		cout << "Cannot open file.";
+		cout << "Cannot out file." << endl;
 		return 1;     //传统意义上，return 1  表示非法结束；return 0  表示正常结束；
 	}
 	while (in)
@@ -148,14 +149,14 @@ bool inout::out(const char* str1, const char* str2)
 	in.open(str1, ios::binary);   //ios::binary是抑制底层系统服务对文件内容进行的自动转换;如果不加这个，系统会自动把'\n'转为'\r\n';
 	if (!in)
 	{
-		cout << "Cannot open file.";
+		cout << "Cannot in file." << endl;
 		return 1;
 	}
 	ofstream out;
 	out.open(str2, ios::binary);
 	if (!out) {
 
-		cout << "Cannot open file.";
+		cout << "Cannot out file." << endl;
 		return 1;     //传统意义上，return 1  表示非法结束；return 0  表示正常结束；
 	}
 	while (in)
@@ -170,42 +171,42 @@ bool inout::out(const char* str1, const char* str2)
 	out.close();
 	return 0;
 }
+
 /*
+返回目录及子目录路径的函数,由于无法解决循环往字符串输出路径字符串而搁置
+采用标准命名,重命名所有文件,对照list.txt进行替代方案
+此方案非个人认为最佳解决方案,以标准命名使得文件名有迹可循,借由循环可以批量加密解密
+重命名方案失败,暂时无法解决,搁置,留待以后再议
+
 此方案为弃案.搁置不用,仅遗留问题留待日后解决
 #define MAX_PATH 80
 void getFiles(string path, string path2, vector<string>& files);
 */
 
+void dir0(void);
+void dir1(void);
+
 
 int main()
 {
-	const char* str0;
-	const char* str1;
-	const char* str2;
-	str0 = "C:\\Users\\ASUS\\Desktop\\test\\*.jpg";
-	str1 = "C:\\Users\\ASUS\\Desktop\\test\\666.jpg";
-	str2 = "C:\\Users\\ASUS\\Desktop\\test\\";
+	int i;
 
-	int i, j;
-	long Handle;
-	inout pic1;
-
-	struct _finddata_t FileInfo;
-	if ((Handle = (_findfirst(str0, &FileInfo))) == -1)
-		cout << "File not found! Error!" << endl;
-	else {
-		//组成绝对路径,使用"安全"的strcat_s,失败!
-		//strcat_s((char*)str2, sizeof(str2) + 1, FileInfo.name);
-		//printf(str2);
-		pic1.in(FileInfo.name, str1);
-		while (_findnext(Handle,&FileInfo)==0)
-		{
-			printf("%s", FileInfo.name);
-		}
-		_findclose(Handle);
+	cout << "加密请输: 0 ,解密请输: 1 !" << endl;
+	cin >> i;
+	if (i != 0 && i != 1) {
+		cout << "请重新输入!" << endl;
+		cin >> i;
+	}
+	switch (i)
+	{
+	case 0:
+		dir0();
+		break;
+	default :
+		dir1();
 	}
 
-
+	system("PAUSE");
 	/*
 	vector<string> files;
 	char buffer[MAX_PATH];
@@ -255,3 +256,60 @@ void getFiles(string path, string path2, vector<string>& files)
 
 
 */
+
+//加密
+void dir0(void) {
+	int j;
+	intptr_t Handle;
+	inout pic;
+	const char* str0;
+	str0 = "*.*";
+	char filename[100];
+	struct _finddata_t FileInfo;
+
+	if ((Handle = (_findfirst(str0, &FileInfo))) == -1)
+		cout << "File not found! Error!" << endl;
+	else {
+		//组成绝对路径,使用"安全"的strcat_s,失败!
+		//strcat_s((char*)str2, sizeof(str2) + 1, FileInfo.name);
+		//printf(str2);
+		pic.in(FileInfo.name, "a.jpg");
+		j = 1;
+		while (_findnext(Handle, &FileInfo) == 0)
+		{
+			sprintf_s((char*)filename, sizeof(filename), "%d.jpg", j - 1);//指定文件名为从0开始的整数，每次加1
+			j = j + 1;
+			pic.in(FileInfo.name, filename);
+			cout << FileInfo.name << "\t";
+			cout << filename << endl;
+		}
+		_findclose(Handle);
+	}
+}
+
+//解密
+void dir1(void) {
+	int j;
+	intptr_t Handle;
+	inout pic;
+	const char* str0;
+	str0 = "*.*";
+	char filename[100];
+	struct _finddata_t FileInfo;
+
+	if ((Handle = (_findfirst(str0, &FileInfo))) == -1)
+		cout << "File not found! Error!" << endl;
+	else {
+		pic.out(FileInfo.name, "a.jpg");
+		j = 1;
+		while (_findnext(Handle, &FileInfo) == 0)
+		{
+			sprintf_s((char*)filename, sizeof(filename), "%d.jpg", j - 1);//指定文件名为从0开始的整数，每次加1
+			j = j + 1;
+			pic.out(FileInfo.name, filename);
+			cout << FileInfo.name << "\t";
+			cout << filename << endl;
+		}
+		_findclose(Handle);
+	}
+}
